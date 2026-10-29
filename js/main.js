@@ -1,80 +1,52 @@
 // Configuration Supabase
-// REMPLACEZ CES VALEURS PAR VOS PROPRES CLÉS DANS VOTRE DASHBOARD SUPABASE
-const SUPABASE_URL = 'VOTRE_SUPABASE_URL';
-const SUPABASE_KEY = 'VOTRE_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
 // Initialisation du client Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('fiche-form');
     const resultSection = document.getElementById('result-section');
     const ficheOutput = document.getElementById('fiche-output');
-    const authCard = document.getElementById('auth-card');
     const authSection = document.getElementById('auth-section');
-    const btnAuthSubmit = document.getElementById('btn-auth-submit');
 
-    // --- GESTION AUTHENTIFICATION ---
+    // --- GESTION AUTHENTIFICATION ROBUSTE ---
 
-    async function checkUser() {
-        try {
-            const { data: { user }, error } = await supabase.auth.getUser();
-            if (error) throw error;
+    async function updateAuthUI(user) {
+        if (user) {
+            authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;">Bonjour, ${user.email}</span>
+                                     <a href="#" id="btn-logout" style="color: var(--primary); font-weight: 600;">Déconnexion</a>`;
 
-            if (user) {
-                authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;">Bonjour, ${user.email}</span>
-                                         <a href="#" id="btn-logout" style="color: var(--primary); font-weight: 600;">Déconnexion</a>`;
-
-                document.getElementById('btn-logout')?.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    await supabase.auth.signOut();
-                    location.reload();
-                });
-                authCard.classList.add('hidden');
-            } else {
-                authSection.innerHTML = `<a href="#" id="btn-login">Connexion</a>`;
-                document.getElementById('btn-login')?.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    authCard.classList.toggle('hidden');
-                });
-            }
-        } catch (err) {
-            console.error('Erreur auth:', err);
+            document.getElementById('btn-logout')?.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await supabaseClient.auth.signOut();
+                location.reload();
+            });
+        } else {
+            authSection.innerHTML = `<a href="login.html" id="btn-login">Connexion</a>`;
         }
     }
 
-    btnAuthSubmit.addEventListener('click', async () => {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-
-        if (!email || !password) return alert('Veuillez remplir tous les champs');
-
-        try {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) {
-                // Tentative d'inscription si la connexion échoue
-                const { error: signUpError } = await supabase.auth.signUp({ email, password });
-                if (signUpError) throw signUpError;
-                else alert('Compte créé ! Vérifiez vos emails pour confirmer l\'inscription.');
-            } else {
-                location.reload();
-            }
-        } catch (error) {
-            alert('Erreur : ' + error.message);
-        }
+    // Écoute les changements de session en temps réel
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        console.log("Auth Event:", event);
+        updateAuthUI(session?.user);
     });
 
-    await checkUser();
+    // Vérification initiale au chargement
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    updateAuthUI(session?.user);
 
     // --- GESTION GÉNÉRATION FICHE ---
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
-            alert('Vous devez être connecté pour sauvegarder vos fiches.');
-            authCard.classList.remove('hidden');
+            alert('Vous devez être connecté pour sauvegarder vos fiches. Redirection vers la page de connexion...');
+            window.location.href = 'login.html';
             return;
         }
 
@@ -94,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const mockResult = simulateGeneration(formData);
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('lesson_plans')
                 .insert([{
                     user_id: user.id,
