@@ -1,131 +1,143 @@
 // Configuration Supabase
-const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
+const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.co';
 const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
 // Configuration Ollama
 const OLLAMA_URL = 'http://localhost:11434/api/generate';
 const OLLAMA_MODEL = 'gemma4:31b-cloud';
 
+let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
+
 // Initialisation du client Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const form = document.getElementById('fiche-//generate'); // Correction ici
+    const form = document.getElementById('fiche-form');
     const resultSection = document.getElementById('result-section');
     const ficheOutput = document.getElementById('fiche-output');
     const authSection = document.getElementById('auth-section');
 
-    // Correction du sélecteur de formulaire qui avait une erreur dans la version précédente
-    const realForm = document.getElementById('fiche-form');
+    // --- GESTION AUTHENTIFICATION ET PROTECTION DE PAGE ---
 
-    async function updateAuthUI(user) {
-        if (user) {
-            authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;">Bonjour, ${user.email}</span>
+    async function protectPage() {
+        try {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+            if (error || !session) {
+                console.log("🚫 Accès non autorisé. Redirection vers login...");
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            currentUser = session.user; // Sauvegarde de l'utilisateur dans la variable globale
+            console.log("✅ Accès autorisé pour :", currentUser.email);
+
+            // Mise à jour de l'UI avec le nom de l'utilisateur
+            authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;">Bonjour, ${currentUser.email}</span>
                                      <a href="#" id="btn-logout" style="color: var(--primary); font-weight: 600;">Déconnexion</a>`;
 
             document.getElementById('btn-logout')?.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await supabaseClient.auth.signOut();
-                location.reload();
+                window.location.href = 'login.html';
             });
-        } else {
-            authSection.innerHTML = `<a href="login.html" id="btn-login">Connexion</a>`;
+
+            return true;
+        } catch (err) {
+            console.error('Erreur critique d\'authentification:', err);
+            window.location.href = 'login.html';
+            return false;
         }
     }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        updateAuthUI(session?.user);
-    });
+    // ÉTAPE CRUCIALE : On protège la page AVANT toute autre action
+    const isAuthorized = await protectPage();
 
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    updateAuthUI(session?.user);
+    if (!isAuthorized) return; // On arrête tout si l'utilisateur n'est pas connecté
 
-    // --- GESTION GÉNÉRATION RÉELLE VIA OLLAMA ---
+    // --- GESTION GÉNÉRATION FICHE ---
 
-    realForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-            alert('Vous devez être connecté pour sauvegarder vos fiches.');
-            window.location.href = 'login.html';
-            return;
-        }
+            const formData = {
+                discipline: document.getElementById('discipline').value,
+                level: document.getElementById('level').value,
+                theme: document.getElementById('theme').value,
+                duration: document.getElementById('duration').value,
+                context: document.getElementById('context').value
+            };
 
-        const formData = {
-            discipline: document.getElementById('discipline').value,
-            level: document.getElementById('level').value,
-            theme: document.getElementById('theme').value,
-            duration: document.getElementById('duration').value,
-            context: document.getElementById('context').value
-        };
+            const submitBtn = form.querySelector('.btn-generate');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>L\'IA rédige votre fiche...</span>';
 
-        const submitBtn = realForm.querySelector('.btn-generate');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>L\'IA rédige votre fiche...</span>';
+            try {
+                // 1. Récupérer la structure de référence
+                const structureResponse = await fetch('structure_fiche.md');
+                const structureText = await structureResponse.text();
 
-        try {
-            // 1. Récupérer la structure de référence
-            const structureResponse = await fetch('structure_fiche.md');
-            const structureText = await structureResponse.text();
+                // 2. Construire le prompt système
+                const prompt = `Tu es un expert en pédagogie pour le primaire et le préscolaire.
+                Sert-toi EXCLUSIVEMENT de la structure suivante pour rédiger la fiche :
+                ---
+                ${structureText}
+                ---
+                Rédige maintenant une fiche complète et argumentée pour :
+                - Discipline : ${formData.discipline}
+                - Niveau : ${formData.level}
+                - Thème : ${formData.theme}
+                - Durée : ${formData.duration} mn
+                - Notes : ${formData.context}
 
-            // 2. Construire le prompt système
-            const prompt = `Tu es un expert en pédagogie pour le primaire et le préscolaire.
-            Sert-toi EXCLUSIVEMENT de la structure suivante pour rédiger la fiche :
-            ---
-            ${structureText}
-            ---
-            Rédige maintenant une fiche complète et argumentée pour :
-            - Discipline : ${formData.discipline}
-            - Niveau : ${formData.level}
-            - Thème : ${formData.theme}
-            - Durée : ${formData.duration} mn
-            - Notes : ${formData.context}
+                L'output doit être en HTML pur (sans balises <html> ou <body>), utilisant des <table> pour le corps de la fiche,
+                en respectant scrupuleusement les colonnes : Étapes, Contenus, Activités du Maître, Activités des Enfants, Justifications.`;
 
-            L'output doit être en HTML pur (sans balises <html> ou <body>), utilisant des <table> pour le corps de la fiche,
-            en respectant scrupuleusement les colonnes : Étapes, Contenus, Activités du Maître, Activités des Enfants, Justifications.`;
+                // 3. Appel à Ollama
+                const response = await fetch(OLLAMA_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: OLLAMA_MODEL,
+                        prompt: prompt,
+                        stream: false
+                    })
+                });
 
-            // 3. Appel à Ollama
-            const response = await fetch(OLLAMA_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: OLLAMA_MODEL,
-                    prompt: prompt,
-                    stream: false
-                })
-            });
+                if (!response.ok) throw new Error('Erreur de communication avec Ollama');
 
-            if (!response.ok) throw new Error('Erreur de communication avec Ollama');
+                const result = await response.json();
+                const generatedHtml = result.response;
 
-            const result = await response.json();
-            const generatedHtml = result.response;
+                // 4. Sauvegarde dans Supabase
+                if (!currentUser) throw new Error('Session utilisateur non trouvée');
 
-            // 4. Sauvegarde dans Supabase
-            const { error } = await supabaseClient
-                .from('lesson_plans')
-                .insert([{
-                    user_id: user.id,
-                    discipline: formData.discipline,
-                    level: formData.level,
-                    theme: formData.theme,
-                    duration: parseInt(formData.duration),
-                    content: { html: generatedHtml },
-                }]);
+                const { error } = await supabaseClient
+                    .from('lesson_plans')
+                    .insert([{
+                        user_id: currentUser.id,
+                        discipline: formData.discipline,
+                        level: formData.level,
+                        theme: formData.theme,
+                        duration: parseInt(formData.duration),
+                        content: { html: generatedHtml },
+                    }]);
 
-            if (error) throw error;
+                if (error) throw error;
 
-            ficheOutput.innerHTML = generatedHtml;
-            resultSection.classList.remove('hidden');
-            resultSection.scrollIntoView({ behavior: 'smooth' });
+                ficheOutput.innerHTML = generatedHtml;
+                resultSection.classList.remove('hidden');
+                resultSection.scrollIntoView({ behavior: 'smooth' });
 
-        } catch (error) {
-            ficheOutput.innerHTML = `<p style="color: red; text-align: center;">Erreur : ${error.message}. <br>Vérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"</p>`;
-            resultSection.classList.remove('hidden');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-        }
-    });
+            } catch (error) {
+                ficheOutput.innerHTML = `<p style="color: red; text-align: center;">Erreur : ${error.message}. <br>Vérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"</p>`;
+                resultSection.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        });
+    }
 });

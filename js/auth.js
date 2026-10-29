@@ -2,8 +2,10 @@
 const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
-// Initialisation avec persistance forcée pour éviter les erreurs de session
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+console.log("🚀 auth.js : Script chargé");
+
+// On utilise window.supabase car le SDK est chargé via CDN
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -12,49 +14,80 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("📦 auth.js : DOM chargé");
     const authForm = document.getElementById('auth-form');
+    const registerForm = document.getElementById('register-form');
     const btnAuth = document.getElementById('btn-auth');
+    const btnRegister = document.getElementById('btn-register');
 
-    if (!authForm) return;
+    // --- LOGIQUE DE CONNEXION (LOGIN) ---
+    if (authForm) {
+        console.log("✅ Formulaire Login trouvé");
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log("Tentative de connexion...");
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-    authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+            if (!email || !password) return alert('Veuillez remplir tous les champs');
 
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+            btnAuth.disabled = true;
+            btnAuth.textContent = 'Connexion...';
 
-        if (!email || !password) return alert('Veuillez remplir tous les champs');
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
 
-        btnAuth.disabled = true;
-        btnAuth.textContent = 'Traitement...';
+                console.log("✅ Connexion réussie, redirection...");
+                // On force un court délai pour laisser Supabase enregistrer la session dans le localStorage
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            } catch (error) {
+                alert('Erreur de connexion : ' + error.message);
+            } finally {
+                btnAuth.disabled = false;
+                btnAuth.textContent = 'Se connecter';
+            }
+        });
+    }
 
-        try {
-            // 1. Tentative de connexion
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
+    // --- LOGIQUE D'INSCRIPTION (REGISTER) ---
+    if (registerForm) {
+        console.log("✅ Formulaire Inscription trouvé");
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log("Tentative d'inscription...");
+            const fullName = document.getElementById('full_name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-            if (error) {
-                console.log("Connexion échouée, tentative d'inscription...");
-                // 2. Tentative d'inscription si la connexion échoue
-                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            if (!fullName || !email || !password) return alert('Veuillez remplir tous les champs');
+
+            btnRegister.disabled = true;
+            btnRegister.textContent = 'Création...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
-                    password: password
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
                 });
 
-                if (signUpError) throw signUpError;
+                if (error) throw error;
 
-                alert('Compte créé avec succès ! Un email de confirmation a été envoyé.');
-            } else {
-                // Succès : redirection vers l'accueil
-                window.location.href = 'index.html';
+                alert('Compte créé avec succès ! \n\nUn email de confirmation a été envoyé. Veuillez le valider pour pouvoir vous connecter.');
+                window.location.href = 'login.html';
+            } catch (error) {
+                alert('Erreur lors de l\'inscription : ' + error.message);
+            } finally {
+                btnRegister.disabled = false;
+                btnRegister.textContent = 'Créer mon compte';
             }
-        } catch (error) {
-            alert('Erreur : ' + error.message);
-        } finally {
-            btnAuth.disabled = false;
-            btnAuth.textContent = 'Se connecter / S\'inscrire';
-        }
-    });
+        });
+    }
 });
