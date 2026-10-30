@@ -1,5 +1,5 @@
 // Configuration Supabase
-const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.co';
+const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
 // Configuration Ollama
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const result = await response.json();
                 const generatedHtml = result.response;
 
-                // 4. Tentative de sauvegarde dans Supabase
+                // 4. Tentative de sauvegarde dans Supabase (Non-bloquante)
                 if (currentUser) {
                     try {
                         const { error } = await supabaseClient
@@ -129,15 +129,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-                // Sauvegarde pour la page de visualisation (toujours exécutée)
+                // Sauvegarde locale pour la page de visualisation
                 localStorage.setItem('last_generated_fiche', JSON.stringify({
                     html: generatedHtml,
                     timestamp: new Date().toISOString()
                 }));
 
-                // Redirection vers la page de la fiche
+                // Redirection immédiate vers la page de la fiche
                 window.location.href = 'fiche.html';
-
 
 
             } catch (error) {
