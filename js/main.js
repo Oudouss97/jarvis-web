@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
 // Configuration Ollama
-const OLLAMA_URL = 'http://localhost:11434/api/generate';
+const OLLAMA_URL = 'https://ollama.com/api/chat';
 const OLLAMA_MODEL = 'gemma4:31b-cloud';
 
 let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
