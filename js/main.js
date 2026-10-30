@@ -1,6 +1,7 @@
 // Configuration Supabase
 const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
+// ⚠️ REMPLACE LA LIGNE CI-DESSOUS PAR TA CLÉ 'anon' (qui commence par eyJ...)
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyZ2JzcmZ3ZXBxd2xldGZzdGF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjM1MzUsImV4cCI6MjEwODgzOTUzNX0.uTxSScj67U9F4U9gHX6v8RPhowRIxL2bl0l68ZY60E0'; 
 
 let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
 
@@ -10,7 +11,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('fiche-form');
     const authSection = document.getElementById('auth-section');
-
 
     // --- GESTION AUTHENTIFICATION ET PROTECTION DE PAGE ---
 
@@ -91,11 +91,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 en respectant scrupuleusement les colonnes : Étapes, Contenus, Activités du Maître, Activités des Enfants, Justifications.`;
 
                 // 3. Appel à la fonction Supabase (Sécurisé)
+                // On passe explicitement le token d'authentification pour éviter les erreurs 400/401
                 const { data, error } = await supabaseClient.functions.invoke('generate-fiche', {
-                    body: { prompt: prompt }
+                    body: { prompt: prompt },
+                    headers: {
+                        Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}`
+                    }
                 });
 
                 if (error) throw new Error(`Erreur serveur : ${error.message}`);
+
+                // Vérification de la réponse
+                if (!data || !data.content) {
+                    throw new Error("La réponse de l'IA est vide ou mal formatée.");
+                }
 
                 const generatedHtml = data.content;
 
