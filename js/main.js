@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             } catch (error) {
                 console.error('Erreur lors de la génération:', error);
-                alert(`Erreur : ${error.message}. \nVérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"`);
+                alert(`Erreur : ${error.message}. \nVeuillez réessayer ou contacter l'administrateur.`);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
