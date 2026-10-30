@@ -5,6 +5,7 @@ const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 // Configuration Ollama
 const OLLAMA_URL = 'https://ollama.com/api/chat';
 const OLLAMA_MODEL = 'gemma4:31b-cloud';
+const OLLAMA_API_KEY = 'VOTRE_CLE_API_ICI';
 
 let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
 
@@ -97,10 +98,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // 3. Appel à Ollama
                 const response = await fetch(OLLAMA_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OLLAMA_API_KEY}`
+                    },
                     body: JSON.stringify({
                         model: OLLAMA_MODEL,
-                        prompt: prompt,
+                        messages: [{ role: 'user', content: prompt }],
                         stream: false
                     })
                 });
@@ -108,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!response.ok) throw new Error('Erreur de communication avec Ollama');
 
                 const result = await response.json();
-                const generatedHtml = result.response;
+                const generatedHtml = result.message.content;
 
                 // 4. Tentative de sauvegarde dans Supabase (Non-bloquante)
                 if (currentUser) {
