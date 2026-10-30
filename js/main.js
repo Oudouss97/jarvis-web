@@ -2,11 +2,6 @@
 const SUPABASE_URL = 'https://drgbsrfwepqwletfstaw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 
-// Configuration Ollama
-const OLLAMA_URL = 'https://ollama.com/api/chat';
-const OLLAMA_MODEL = 'gemma4:31b-cloud';
-const OLLAMA_API_KEY = 'a2ec6a625cb342ec8e54d9ae22016982.gbJWwzY1w2gnirHKLCTIniny';
-
 let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
 
 // Initialisation du client Supabase
@@ -95,24 +90,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 L'output doit être en HTML pur (sans balises <html> ou <body>), utilisant des <table> pour le corps de la fiche,
                 en respectant scrupuleusement les colonnes : Étapes, Contenus, Activités du Maître, Activités des Enfants, Justifications.`;
 
-                // 3. Appel à Ollama
-                const response = await fetch(OLLAMA_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OLLAMA_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: OLLAMA_MODEL,
-                        messages: [{ role: 'user', content: prompt }],
-                        stream: false
-                    })
+                // 3. Appel à la fonction Supabase (Sécurisé)
+                const { data, error } = await supabaseClient.functions.invoke('generate-fiche', {
+                    body: { prompt: prompt }
                 });
 
-                if (!response.ok) throw new Error('Erreur de communication avec Ollama');
+                if (error) throw new Error(`Erreur serveur : ${error.message}`);
 
-                const result = await response.json();
-                const generatedHtml = result.message.content;
+                const generatedHtml = data.content;
 
                 // 4. Tentative de sauvegarde dans Supabase (Non-bloquante)
                 if (currentUser) {
