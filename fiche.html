@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduGen - Votre Fiche Pédagogique</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .fiche-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        .fiche-header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 1rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .fiche-container { box-shadow: none; margin: 0; padding: 0; width: 100%; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar no-print">
+        <div class="container">
+            <h1 class="logo">Edu<span>Gen</span></h1>
+            <div class="nav-links">
+                <a href="index.html">Retour au générateur</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="fiche-container">
+            <div class="fiche-header-actions no-print">
+                <h3>📄 Fiche Pédagogique Générée</h3>
+                <div class="btn-group">
+                    <button onclick="window.print()" class="btn-primary">Imprimer / PDF</button>
+                    <a href="index.html" class="btn-secondary" style="text-decoration: none; display: inline-block; text-align: center;">Nouvelle Fiche</a>
+                </div>
+            </div>
+
+            <div id="fiche-output" class="fiche-content">
+                <!-- Le contenu sera inséré ici via JS -->
+                <div style="text-align: center; padding: 3rem;">
+                    <p>Chargement de votre fiche...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/fiche-display.js"></script>
+</body>
+</html>

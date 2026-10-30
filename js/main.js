@@ -127,9 +127,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (error) throw error;
 
-                ficheOutput.innerHTML = generatedHtml;
-                resultSection.classList.remove('hidden');
-                resultSection.scrollIntoView({ behavior: 'smooth' });
+                // Sauvegarde pour la page de visualisation
+                localStorage.setItem('last_generated_fiche', JSON.stringify({
+                    html: generatedHtml,
+                    timestamp: new Date().toISOString()
+                }));
+
+                // Redirection vers la page de la fiche
+                window.location.href = 'fiche.html';
+
 
             } catch (error) {
                 ficheOutput.innerHTML = `<p style="color: red; text-align: center;">Erreur : ${error.message}. <br>Vérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"</p>`;
