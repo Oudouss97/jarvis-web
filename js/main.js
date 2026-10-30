@@ -13,9 +13,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('fiche-form');
-    const resultSection = document.getElementById('result-section');
-    const ficheOutput = document.getElementById('fiche-output');
     const authSection = document.getElementById('auth-section');
+
 
     // --- GESTION AUTHENTIFICATION ET PROTECTION DE PAGE ---
 
@@ -111,23 +110,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const result = await response.json();
                 const generatedHtml = result.response;
 
-                // 4. Sauvegarde dans Supabase
-                if (!currentUser) throw new Error('Session utilisateur non trouvée');
+                // 4. Tentative de sauvegarde dans Supabase
+                if (currentUser) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('lesson_plans')
+                            .insert([{
+                                user_id: currentUser.id,
+                                discipline: formData.discipline,
+                                level: formData.level,
+                                theme: formData.theme,
+                                duration: parseInt(formData.duration),
+                                content: { html: generatedHtml },
+                            }]);
+                        if (error) console.error('⚠️ Erreur sauvegarde Supabase:', error);
+                    } catch (saveError) {
+                        console.error('⚠️ Échec critique sauvegarde Supabase:', saveError);
+                    }
+                }
 
-                const { error } = await supabaseClient
-                    .from('lesson_plans')
-                    .insert([{
-                        user_id: currentUser.id,
-                        discipline: formData.discipline,
-                        level: formData.level,
-                        theme: formData.theme,
-                        duration: parseInt(formData.duration),
-                        content: { html: generatedHtml },
-                    }]);
-
-                if (error) throw error;
-
-                // Sauvegarde pour la page de visualisation
+                // Sauvegarde pour la page de visualisation (toujours exécutée)
                 localStorage.setItem('last_generated_fiche', JSON.stringify({
                     html: generatedHtml,
                     timestamp: new Date().toISOString()
@@ -137,13 +139,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.location.href = 'fiche.html';
 
 
+
             } catch (error) {
-                ficheOutput.innerHTML = `<p style="color: red; text-align: center;">Erreur : ${error.message}. <br>Vérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"</p>`;
-                resultSection.classList.remove('hidden');
+                console.error('Erreur lors de la génération:', error);
+                alert(`Erreur : ${error.message}. \nVérifiez que Ollama tourne bien avec OLLAMA_ORIGINS="*"`);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
             }
+
         });
     }
 });
