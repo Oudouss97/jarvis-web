@@ -5,7 +5,7 @@ const SUPABASE_KEY = 'sb_publishable_1PdFR-tSzvnLNiP16p3hFg_douwIesc';
 // Configuration Ollama
 const OLLAMA_URL = 'https://ollama.com/api/chat';
 const OLLAMA_MODEL = 'gemma4:31b-cloud';
-const OLLAMA_API_KEY = 'VOTRE_CLE_API_ICI';
+const OLLAMA_API_KEY = 'a2ec6a625cb342ec8e54d9ae22016982.gbJWwzY1w2gnirHKLCTIniny';
 
 let currentUser = null; // Variable globale pour stocker l'utilisateur connecté
 
