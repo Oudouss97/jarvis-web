@@ -200,7 +200,34 @@ body {
     font-family: 'Times New Roman', Times, serif;
     color: black;
 }
+/* Style pour les tableaux générés par l'IA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9rem;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
 
+th, td {
+    border: 1px solid #cbd5e1; /* Bordures grises */
+    padding: 12px; /* Espace à l'intérieur des cases */
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+th {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-weight: bold;
+}
+
+/* Ligne sur deux pour faciliter la lecture */
+tr:nth-child(even) {
+    background-color: #f1f5f9;
+}
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;

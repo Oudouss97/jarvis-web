@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return false;
             }
             currentUser = session.user;
-            authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;">Bonjour, ${currentUser.email}</span>
+            authSection.innerHTML = `<span style="font-size: 0.9rem; margin-right: 1rem;"></span>
                                      <a href="#" id="btn-logout" style="color: var(--primary); font-weight: 600;">Déconnexion</a>`;
             document.getElementById('btn-logout')?.addEventListener('click', async (e) => {
                 e.preventDefault();
@@ -54,8 +54,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 // 1. Récupérer la structure
-                const structureResponse = await fetch('structure_fiche.md');
-                const structureText = await structureResponse.text();
+                // Détection automatique du niveau pour choisir le bon fichier .md
+let fichierStructure = 'structure_elementaire.md'; // Par défaut
+
+if (formData.level.includes('Section') || formData.level.includes('PS') || formData.level.includes('MS') || formData.level.includes('GS')) {
+    fichierStructure = 'structure_prescolaire.md';
+}
+
+// Chargement du bon fichier
+const structureResponse = await fetch(fichierStructure);
+const structureText = await structureResponse.text();
 
                 // 2. Construire le prompt
                 const prompt = `Tu es un expert en pédagogie pour le primaire et le préscolaire.
