@@ -13,15 +13,6 @@ Tu dois adapter les étapes du "Corps de la fiche" en fonction de la Discipline 
 ## B. Démarche Vocabulaire
 *Étapes :* Découverte du mot > Mise en relief > Fixation graphique > Sens du mot (synonymes/antonymes) > Synthèse > Réemploi.
 
-# MODÈLE TABLEAU 1 (Identique pour tous)
-| Étapes / Rubriques | Contenus | Justifications |
-| :--- | :--- | :--- |
-| Contenu/Objet | [Le thème] | - Conforme au programme.<br>- [Justif] |
-| OPO | [OPO formulé] | - [Justif] |
-| Moyens matériels | Tableau, craies... | - Support concret. |
-| Moyens pédagogiques | Manipulation, interrogation... | - Facilitent l'acquisition. |
-| Documentation | IO, Guide pédagogique. | - Conformité. |
-
 # MODÈLE TABLEAU 2 (Déroulement)
 | Étapes | Contenus | Part du maître | Activités des élèves | Justifications |
 | :--- | :--- | :--- | :--- | :--- |

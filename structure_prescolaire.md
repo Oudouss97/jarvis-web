@@ -16,15 +16,6 @@ Tu dois adapter les étapes du "Corps de la fiche" en fonction de la Discipline 
 ## C. Démarche Type 3 : Vocabulaire
 *Étapes :* Préalables > Révision > Acquisition des mots (compréhension en réception) > Consolidation (compréhension en production) > Transfert (évaluation des acquis et mémorisation).
 
-# MODÈLE TABLEAU 1 (Identique pour tous)
-| Étapes / Rubriques | Contenus | Justifications |
-| :--- | :--- | :--- |
-| Contenu/Objet | [Le thème] | - Conforme au programme.<br>- [Justif] |
-| OPO | [OPO formulé] | - [Justif] |
-| Moyens matériels | [Matériel concret] | - Support concret (stade préopératoire). |
-| Moyens pédagogiques | Questions/réponses, manipulation... | - Facilitent la compréhension. |
-| Documentation | Guide pédagogique. | - Conformité avec le programme. |
-
 # MODÈLE TABLEAU 2 (Déroulement)
 | Étapes | Contenus | Activités de l'éducateur | Activités des enfants | Justifications |
 | :--- | :--- | :--- | :--- | :--- |
