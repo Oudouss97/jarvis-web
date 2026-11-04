@@ -53,19 +53,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             submitBtn.innerHTML = '<span>L\'IA rédige votre fiche...</span>';
 
             try {
-                // 1. Récupérer la structure
-                // Détection automatique du niveau pour choisir le bon fichier .md
-let fichierStructure = 'structure_elementaire.md'; // Par défaut
+                // 1. Détection automatique du niveau pour choisir le bon fichier .md
+                let fichierStructure = 'structure_elementaire.md'; // Par défaut
+                if (formData.level.includes('Section') || formData.level.includes('PS') || formData.level.includes('MS') || formData.level.includes('GS')) {
+                    fichierStructure = 'structure_prescolaire.md';
+                }
 
-if (formData.level.includes('Section') || formData.level.includes('PS') || formData.level.includes('MS') || formData.level.includes('GS')) {
-    fichierStructure = 'structure_prescolaire.md';
-}
+                const structureResponse = await fetch(fichierStructure);
+                const structureText = await structureResponse.text();
 
-// Chargement du bon fichier
-const structureResponse = await fetch(fichierStructure);
-const structureText = await structureResponse.text();
-
-                // 2. Construire le prompt
+                // 2. Construire le prompt pour l'Agent Générateur
                 const prompt = `Tu es un expert en pédagogie pour le primaire et le préscolaire.
                 Sert-toi EXCLUSIVEMENT de la structure suivante pour rédiger la fiche :
                 ---
@@ -80,23 +77,40 @@ const structureText = await structureResponse.text();
                 L'output doit être en HTML pur (sans balises <html> ou <body>), utilisant des <table> pour le corps de la fiche,
                 en respectant scrupuleusement les colonnes : Étapes, Contenus, Activités du Maître, Activités des Enfants, Justifications.`;
 
-                // 3. Appel à la fonction Supabase (Version corrigée, sans token forcé)
+                // 3. APPEL À L'AGENT 1 : Générateur
                 const { data, error } = await supabaseClient.functions.invoke('generate-fiche', {
                     body: { prompt: prompt }
                 });
 
-                if (error) throw new Error(`Erreur serveur : ${error.message}`);
+                if (error) throw new Error(`Erreur serveur (Générateur) : ${error.message}`);
+                if (!data || !data.content) throw new Error("La réponse du Générateur est vide.");
 
-                if (!data || !data.content) {
-                    throw new Error("La réponse de l'IA est vide ou mal formatée.");
+                let generatedHtml = data.content;
+
+                // 4. APPEL À L'AGENT 2 : Vérificateur
+                submitBtn.innerHTML = '<span>L\'IA vérifie la fiche...</span>';
+                console.log("Envoi à l'agent vérificateur...");
+
+                const { data: verifData, error: verifError } = await supabaseClient.functions.invoke('verifier-fiche', {
+                    body: { fiche_html: generatedHtml }
+                });
+
+                if (verifError) {
+                    console.error('⚠️ Erreur Agent Vérificateur:', verifError);
+                    // Si le vérificateur échoue, on garde quand même la fiche originale
+                } else if (verifData && verifData.resultat) {
+                    if (verifData.resultat !== 'VALIDE') {
+                        console.log("L'agent vérificateur a corrigé la fiche.");
+                        generatedHtml = verifData.resultat; // On remplace par la version corrigée
+                    } else {
+                        console.log("L'agent vérificateur a validé la fiche.");
+                    }
                 }
 
-                const generatedHtml = data.content;
-
-                // 4. Sauvegarde Supabase
+                // 5. Sauvegarde Supabase (avec la fiche finale validée)
                 if (currentUser) {
                     try {
-                        const { error } = await supabaseClient
+                        const { error: saveError } = await supabaseClient
                             .from('lesson_plans')
                             .insert([{
                                 user_id: currentUser.id,
@@ -106,12 +120,13 @@ const structureText = await structureResponse.text();
                                 duration: parseInt(formData.duration),
                                 content: { html: generatedHtml },
                             }]);
-                        if (error) console.error('⚠️ Erreur sauvegarde Supabase:', error);
+                        if (saveError) console.error('⚠️ Erreur sauvegarde Supabase:', saveError);
                     } catch (saveError) {
                         console.error('⚠️ Échec critique sauvegarde Supabase:', saveError);
                     }
                 }
 
+                // 6. Sauvegarde locale et redirection
                 localStorage.setItem('last_generated_fiche', JSON.stringify({
                     html: generatedHtml,
                     timestamp: new Date().toISOString()
